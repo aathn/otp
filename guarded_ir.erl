@@ -604,3 +604,15 @@ term_cost(Id, #eg{expressions=Exprs}) ->
 
 path_cost(Path, Eg) ->
     foldl(fun(Id, Acc) -> term_cost(Id, Eg) + Acc end, 0, Path).
+
+%%
+%% We must select an ordered set of alternatives tᵢ, each with cost dᵢ
+%% and incremental condition θᵢ with cost cᵢ, where the incremental
+%% condition θᵢ is such that tᵢ is valid given θⱼ true for all j < i.
+%%
+%% Further, we must minimize the expected cost, computed as:
+%% ∑_i((∑(j ≤ i)cⱼ + dᵢ)*P(θⱼs false and θᵢ true)),
+%% also ensuring that at least one θᵢ is always guaranteed to hold.
+%% This latter condition can always be satisfied by letting the root
+%% term have a free constant true condition.
+%%
