@@ -616,3 +616,33 @@ path_cost(Path, Eg) ->
 %% This latter condition can always be satisfied by letting the root
 %% term have a free constant true condition.
 %%
+%% How to implement such a selection procedure?  Note that given an
+%% alternative tᵢ and a "fallback" with cost b, the new expected cost
+%% for executing both will be cᵢ + θᵢdᵢ + (1 - θᵢ)b.  This cost is
+%% less than b iff the quantity sᵢ := cᵢ/θᵢ + dᵢ is less than b.
+%% Furthermore, suppose we extend the current fallback with alternative
+%% tⱼ satisfying sⱼ < b. The new expected cost will be
+%% cᵢ + θᵢdᵢ + (1 - θᵢ)(cⱼ + θⱼdⱼ + (1 - θⱼ)b).  Now, note that since
+%% cⱼ + θⱼdⱼ + (1 - θⱼ)b < b, the new cost is lower than what we
+%% obtained with the original fallback.  All of this means that we can
+%% incrementally construct our choice of alternatives in a minimal
+%% way, by starting out with the root node as a fallback, and then
+%% inserting cheaper alternatives in the correct order whenever we
+%% find one.  If we get two alternatives whose disjunction is
+%% necessarily true (for example, p and ¬p), any alternative more
+%% expensive than the costlier of the two may be safely dropped.
+%% Furthermore, since cheaper alternatives are always checked first,
+%% whenever we have two alternatives sharing some part of their
+%% conditions, the cost of the shared conditions can be discounted
+%% from the more expensive alternative.
+
+%% In practice, we might search for alternatives satisfying sᵢ ≤ b,
+%% starting from the cheapest one.  Whenever we find an alternative,
+%% we add it to our list, and mark its conditions as free of cost.  If
+%% the conditions contradict the conditions of one of the previous
+%% alternatives, we stop the search.  Otherwise, we keep searching
+%% until no alternatives remain with sᵢ ≤ b.  Note that the root term
+%% will satisfy b ≤ b, so the search is guaranteed to yield at least
+%% one result.  The final term that we construct given that we have
+%% selected alternatives tᵢ with conditions θᵢ is
+%% if θ₁ then t₁ else if θ₂ then t₂ else ... else tₙ.
